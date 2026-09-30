@@ -1,0 +1,9 @@
+# build output (exe + personal config live here, not for the repo)
+dist/
+
+# local screenshots / logs
+/*.png
+tools/*.log
+
+# generated at first run, may contain personal paths
+config.txt
