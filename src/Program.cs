@@ -1,6 +1,6 @@
-// ZCodeWallpaper - 外部壁纸注入器
-// 通过 CDP(Chrome DevTools Protocol) 向 ZCode 渲染层注入毛玻璃壁纸覆盖层。
-// 目标框架: .NET Framework 4.8 (Windows 自带)，语法: C# 5。
+// ZCodeWallpaper - external wallpaper injector for the ZCode desktop app
+// Injects a frosted-glass wallpaper layer into the ZCode renderer via CDP (Chrome DevTools Protocol).
+// Target: .NET Framework 4.8 (ships with Windows); language level: C# 5.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace ZCodeWallpaper
 {
-    // 极简本地化: 中文系统显示中文, 其他语言显示英文
+    // Minimal localization: Chinese UI on zh systems, English elsewhere
     public static class L
     {
         public static readonly bool Zh = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "zh";
@@ -33,37 +33,40 @@ namespace ZCodeWallpaper
         public string Fit = "cover";
         public string Position = "center";
         public int Port = 19788;
-        public bool Launch = true;      // false = 纯附加模式(不自启 ZCode)
-        public string ZcodePath = "";   // 留空则自动探测
+        public bool Launch = true;      // false = attach-only mode (do not launch ZCode)
+        public string ZcodePath = "";   // empty = auto-detect
 
         public static string DefaultText()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("# ============ ZCode 壁纸配置 ============");
-            sb.AppendLine("# 修改并保存本文件, 壁纸会立即刷新, 无需重启。");
+            sb.AppendLine("# ============ ZCode Wallpaper config ============");
+            sb.AppendLine("# Edit and save this file - the wallpaper refreshes instantly, no restart needed.");
             sb.AppendLine("");
-            sb.AppendLine("# 图片路径 (必填, 清空则关闭壁纸)");
+            sb.AppendLine("# Image path (required; clear it to disable the wallpaper)");
             sb.AppendLine("path=");
             sb.AppendLine("");
-            sb.AppendLine("# 不透明度 0~1, 越小壁纸越淡 (建议 0.2~0.35)");
+            sb.AppendLine("# Opacity 0~1, lower = fainter wallpaper (recommended 0.2~0.35)");
             sb.AppendLine("opacity=0.25");
             sb.AppendLine("");
-            sb.AppendLine("# 模糊度, 单位像素, 0 表示不模糊 (建议 8~16)");
+            sb.AppendLine("# Blur in pixels, 0 = no blur (recommended 8~16)");
             sb.AppendLine("blur=12");
             sb.AppendLine("");
-            sb.AppendLine("# 亮度 0.5~1.5, 1 表示不变");
+            sb.AppendLine("# Brightness 0.5~1.5, 1 = unchanged");
             sb.AppendLine("brightness=1");
             sb.AppendLine("");
-            sb.AppendLine("# 缩放, 略大于 1 可避免模糊后边缘露白");
+            sb.AppendLine("# Scale, slightly above 1 avoids soft edges after blurring");
             sb.AppendLine("scale=1.08");
             sb.AppendLine("");
-            sb.AppendLine("# 填充方式: cover=铺满窗口(可能裁剪) contain=完整显示(可能留边)");
+            sb.AppendLine("# Fit: cover = fill window (may crop), contain = show whole image (may letterbox)");
             sb.AppendLine("fit=cover");
             sb.AppendLine("");
-            sb.AppendLine("# ZCode 安装路径 (留空自动探测)");
+            sb.AppendLine("# Vertical focus: top / center / bottom");
+            sb.AppendLine("position=center");
+            sb.AppendLine("");
+            sb.AppendLine("# ZCode install path (leave empty to auto-detect)");
             sb.AppendLine("zcodePath=");
             sb.AppendLine("");
-            sb.AppendLine("# 调试端口 (避免与其他程序冲突即可)");
+            sb.AppendLine("# Debug port (just avoid conflicts with other programs)");
             sb.AppendLine("port=19788");
             return sb.ToString();
         }
@@ -111,7 +114,7 @@ namespace ZCodeWallpaper
         }
     }
 
-    // ---- 一个已连接的 CDP 页面目标 ----
+    // ---- A connected CDP page target ----
     public class Target : IDisposable
     {
         public string Id;
@@ -289,7 +292,7 @@ namespace ZCodeWallpaper
             settingsForm.Activate();
         }
 
-        // 设置界面或配置文件变更后调用: 保存到磁盘 + 防抖应用
+        // Called when settings UI or the config file changes: save to disk + debounced apply
         public void ConfigChanged()
         {
             SaveConfig();
@@ -299,19 +302,9 @@ namespace ZCodeWallpaper
         public void SaveConfig()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("# ============ ZCode 壁纸配置 ============");
-            sb.AppendLine("# 修改并保存本文件, 壁纸会立即刷新, 无需重启。");
-            sb.AppendLine("# 图片路径 (清空则关闭壁纸)");
-            sb.AppendLine("path=" + cfg.ImagePath);
-            sb.AppendLine("opacity=" + cfg.Opacity.ToString("0.0##"));
-            sb.AppendLine("blur=" + cfg.Blur.ToString("0.##"));
-            sb.AppendLine("brightness=" + cfg.Brightness.ToString("0.##"));
-            sb.AppendLine("scale=" + cfg.Scale.ToString("0.##"));
-            sb.AppendLine("fit=" + cfg.Fit);
-            sb.AppendLine("position=" + cfg.Position);
-            sb.AppendLine("zcodePath=" + cfg.ZcodePath);
-            sb.AppendLine("port=" + cfg.Port);
-            try { File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true)); } catch { }
+            sb.AppendLine("# ============ ZCode Wallpaper config ============");
+            sb.AppendLine("# Edit and save this file - the wallpaper refreshes instantly, no restart needed.");
+            sb.AppendLine("# Image path (clear it to disable the wallpaper)");try { File.WriteAllText(configPath, sb.ToString(), new UTF8Encoding(true)); } catch { }
         }
 
         void ExitApp()
@@ -325,7 +318,7 @@ namespace ZCodeWallpaper
             Application.Exit();
         }
 
-        // ---- 启动流程 ----
+        // ---- Startup ----
         async void Startup()
         {
             try
@@ -343,14 +336,14 @@ namespace ZCodeWallpaper
                     OpenSettings();
                 }
 
-                // 端口已通 -> 附加; 否则按需启动 ZCode
+                // Port already alive -> attach; otherwise launch ZCode as needed
                 if (!await PortAlive(1500))
                 {
                     bool zcodeRunning = Process.GetProcessesByName("ZCode").Length > 0;
                     if (zcodeRunning)
                     {
                         Notify(L.T("壁纸未生效", "Wallpaper not applied"), L.T("检测到 ZCode 已在运行(未带壁纸)。请先完全退出 ZCode(含托盘图标), 再通过桌面\"ZCode Wallpaper\"图标启动。", "ZCode is already running (without wallpaper). Fully quit ZCode first (including the tray icon), then launch via the \"ZCode Wallpaper\" desktop icon."), 10000);
-                        await Task.Delay(15000); // 留时间展示气泡
+                        await Task.Delay(15000); // keep the tray icon alive long enough to show the balloon
                         ExitApp();
                         return;
                     }
@@ -466,7 +459,7 @@ namespace ZCodeWallpaper
             return "data:" + mime + ";base64," + Convert.ToBase64String(File.ReadAllBytes(cfg.ImagePath));
         }
 
-        // ---- 注入源码 ----
+        // ---- Injection source ----
         const string ApplyJs = @"(function () {
   function apply(cfg) {
     var old = document.getElementById('zcode-wallpaper');
@@ -510,7 +503,7 @@ namespace ZCodeWallpaper
             return ApplyJs.Replace("__CONFIG__", json.ToString());
         }
 
-        // ---- 目标扫描 / 附加 / 监控 ----
+        // ---- Target scan / attach / monitor ----
         class PageTarget { public string Id; public string WsUrl; public string Url; }
 
         List<PageTarget> ListPageTargets()
@@ -578,7 +571,7 @@ namespace ZCodeWallpaper
                     await AttachAll(payload);
                 }
                 catch { }
-                // ZCode 已退出 -> 注入器退出
+                // ZCode has exited -> exit the injector
                 bool alive = false;
                 try
                 {
@@ -599,7 +592,7 @@ namespace ZCodeWallpaper
 
         string currentPayload;
 
-        // ---- 配置热更新 ----
+        // ---- Config hot reload ----
         void WatchConfig()
         {
             configWatcher = new FileSystemWatcher(exeDir, "config.txt");
@@ -623,7 +616,7 @@ namespace ZCodeWallpaper
                 string payload = BuildPayload(imageDataUrl);
                 currentPayload = payload;
                 List<PageTarget> freshList = ListPageTargets();
-                // 端口没通时(比如 ZCode 没在跑) 尝试启动
+                // port not alive (e.g. ZCode not running) -> give up for now
                 if (freshList.Count == 0 && !await PortAlive(1500))
                 {
                     return;
@@ -653,7 +646,7 @@ namespace ZCodeWallpaper
 
         void ScheduleReload() { reloadDebounce.Change(100, Timeout.Infinite); }
 
-        // ---- 托盘 / 快捷方式 ----
+        // ---- Tray / shortcut ----
         void Notify(string title, string text, int ms)
         {
             try { tray.BalloonTipTitle = title; tray.BalloonTipText = text; tray.ShowBalloonTip(ms); } catch { }
