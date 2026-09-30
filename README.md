@@ -1,5 +1,7 @@
 # ZCodeWallpaper — ZCode 壁纸版
 
+[English](README.en.md) | 简体中文
+
 给 ZCode 桌面客户端加一张毛玻璃壁纸背景图的小工具。
 
 不修改 ZCode 的任何文件，ZCode 升级不受影响。双击托盘图标即可调参数，改动即时生效。
