@@ -24,10 +24,10 @@ ZCode 是 Electron 应用。本工具启动 ZCode 时附加 `--remote-debugging-
 
 1. 从 [Releases](../../releases) 下载 `ZCodeWallpaper.exe`，放到任意固定目录（如 `D:\ZCodeWallpaper`，配置文件会生成在旁边，不要放临时文件夹）
 2. 先完全退出 ZCode（包括托盘图标）
-3. 双击 `ZCodeWallpaper.exe`——首次运行会自动在桌面创建「ZCode 壁纸版」快捷方式，并弹出设置窗口
+3. 双击 `ZCodeWallpaper.exe`——首次运行会自动在桌面创建「ZCode Wallpaper」快捷方式，并弹出设置窗口
 4. 点「浏览...」选一张图片，壁纸立即生效
 
-之后都从桌面的「ZCode 壁纸版」图标启动 ZCode。
+之后都从桌面的「ZCode Wallpaper」图标启动 ZCode。
 
 > 从本仓库源码自行编译的话，产物没有内嵌图标，界面功能完全一致。
 
@@ -44,6 +44,8 @@ ZCode 是 Electron 应用。本工具启动 ZCode 时附加 `--remote-debugging-
 | 位置 | 上 / 中 / 下，控制画面焦点 |
 
 所有改动即时生效并自动保存到 exe 同目录的 `config.txt`。
+
+界面语言跟随系统自动切换：中文系统显示中文，其他语言系统显示英文。
 
 托盘右键菜单：设置 / 编辑配置文件 / 重新加载配置 / 退出。
 
@@ -76,7 +78,7 @@ build.cmd
 ## 卸载
 
 1. 右键托盘图标 → 退出
-2. 删除「ZCode 壁纸版」桌面快捷方式
+2. 删除「ZCode Wallpaper」桌面快捷方式
 3. 删除 exe 所在目录（配置文件一并清除）
 
 ## 免责声明

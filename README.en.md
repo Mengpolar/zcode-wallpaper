@@ -24,7 +24,7 @@ Requirements: Windows 10/11 and ZCode installed.
 
 1. Download `ZCodeWallpaper.exe` from [Releases](../../releases) and put it in a permanent folder (e.g. `D:\ZCodeWallpaper`; the config file is generated next to it — avoid temp folders)
 2. Fully quit ZCode first (including the tray icon)
-3. Double-click `ZCodeWallpaper.exe` — on first run it creates a "ZCode 壁纸版" desktop shortcut and opens the settings window
+3. Double-click `ZCodeWallpaper.exe` — on first run it creates a "ZCode Wallpaper" desktop shortcut and opens the settings window
 4. Click "浏览..." (Browse) to pick an image — the wallpaper applies instantly
 
 From then on, launch ZCode through the desktop shortcut instead of the original one.
@@ -44,6 +44,8 @@ From then on, launch ZCode through the desktop shortcut instead of the original 
 | Position | Top / Center / Bottom — controls the image focal point |
 
 All changes apply instantly and are saved to `config.txt` next to the exe.
+
+The UI language follows your system: Chinese on zh systems, English everywhere else.
 
 Tray context menu: Settings / Edit config file / Reload config / Exit.
 
@@ -76,7 +78,7 @@ Requires Node.js 18+.
 ## Uninstall
 
 1. Tray icon → Exit
-2. Delete the "ZCode 壁纸版" desktop shortcut
+2. Delete the "ZCode Wallpaper" desktop shortcut
 3. Delete the exe folder (config goes with it)
 
 ## Disclaimer

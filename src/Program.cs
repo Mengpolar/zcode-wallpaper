@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -15,6 +16,13 @@ using System.Windows.Forms;
 
 namespace ZCodeWallpaper
 {
+    // 极简本地化: 中文系统显示中文, 其他语言显示英文
+    public static class L
+    {
+        public static readonly bool Zh = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "zh";
+        public static string T(string zh, string en) { return Zh ? zh : en; }
+    }
+
     public class Config
     {
         public string ImagePath = "";
@@ -37,7 +45,7 @@ namespace ZCodeWallpaper
             sb.AppendLine("# 图片路径 (必填, 清空则关闭壁纸)");
             sb.AppendLine("path=");
             sb.AppendLine("");
-            sb.AppendLine("# 图片透明度 0~1, 越小越淡 (建议 0.2~0.35)");
+            sb.AppendLine("# 不透明度 0~1, 越小壁纸越淡 (建议 0.2~0.35)");
             sb.AppendLine("opacity=0.25");
             sb.AppendLine("");
             sb.AppendLine("# 模糊度, 单位像素, 0 表示不模糊 (建议 8~16)");
@@ -248,17 +256,17 @@ namespace ZCodeWallpaper
             cfg = ConfigLoader.Load(configPath);
             EnsureShortcut();
 
-            MenuItem miSettings = new MenuItem("设置(&S)...", delegate { OpenSettings(); });
-            MenuItem miEdit = new MenuItem("编辑配置文件(&E)", delegate { try { Process.Start("notepad.exe", configPath); } catch { } });
-            MenuItem miReload = new MenuItem("重新加载配置", delegate { ScheduleReload(); });
-            MenuItem miExit = new MenuItem("退出(&X)", delegate { ExitApp(); });
+            MenuItem miSettings = new MenuItem(L.T("设置(&S)...", "&Settings..."), delegate { OpenSettings(); });
+            MenuItem miEdit = new MenuItem(L.T("编辑配置文件(&E)", "Edit config &file"), delegate { try { Process.Start("notepad.exe", configPath); } catch { } });
+            MenuItem miReload = new MenuItem(L.T("重新加载配置", "&Reload config"), delegate { ScheduleReload(); });
+            MenuItem miExit = new MenuItem(L.T("退出(&X)", "E&xit"), delegate { ExitApp(); });
             ContextMenu menu = new ContextMenu(new MenuItem[] {
                 miSettings, new MenuItem("-"), miEdit, miReload, new MenuItem("-"), miExit });
 
             tray = new NotifyIcon();
             try { tray.Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
             catch { tray.Icon = SystemIcons.Application; }
-            tray.Text = "ZCode 壁纸 (双击打开设置)";
+            tray.Text = L.T("ZCode 壁纸 (双击打开设置)", "ZCode Wallpaper (double-click for settings)");
             tray.ContextMenu = menu;
             tray.Visible = true;
             tray.DoubleClick += delegate { OpenSettings(); };
@@ -325,13 +333,13 @@ namespace ZCodeWallpaper
                 string zcodeExe = ResolveZcodePath();
                 if (zcodeExe == null)
                 {
-                    Fatal("未找到 ZCode。请在 config.txt 中填写 zcodePath=C:\\...\\ZCode.exe");
+                    Fatal(L.T("未找到 ZCode。请在 config.txt 中填写 zcodePath=\\...\\ZCode.exe", "ZCode not found. Set zcodePath=\\...\\ZCode.exe in config.txt"));
                     return;
                 }
 
                 if (firstRun)
                 {
-                    Notify("欢迎使用 ZCode 壁纸!", "请点击下方提示打开设置, 选择一张图片, 壁纸立即生效。桌面快捷方式已创建。", 6000);
+                    Notify(L.T("欢迎使用 ZCode 壁纸!", "Welcome to ZCode Wallpaper!"), L.T("请点击下方提示打开设置, 选择一张图片, 壁纸立即生效。桌面快捷方式已创建。", "Open the settings window below, pick an image and the wallpaper applies instantly. A desktop shortcut has been created."), 6000);
                     OpenSettings();
                 }
 
@@ -341,7 +349,7 @@ namespace ZCodeWallpaper
                     bool zcodeRunning = Process.GetProcessesByName("ZCode").Length > 0;
                     if (zcodeRunning)
                     {
-                        Notify("壁纸未生效", "检测到 ZCode 已在运行(未带壁纸)。请先完全退出 ZCode(含托盘图标), 再通过桌面\"ZCode 壁纸版\"图标启动。", 10000);
+                        Notify(L.T("壁纸未生效", "Wallpaper not applied"), L.T("检测到 ZCode 已在运行(未带壁纸)。请先完全退出 ZCode(含托盘图标), 再通过桌面\"ZCode Wallpaper\"图标启动。", "ZCode is already running (without wallpaper). Fully quit ZCode first (including the tray icon), then launch via the \"ZCode Wallpaper\" desktop icon."), 10000);
                         await Task.Delay(15000); // 留时间展示气泡
                         ExitApp();
                         return;
@@ -356,7 +364,7 @@ namespace ZCodeWallpaper
                     }
                     if (!await PortAlive(60000))
                     {
-                        Fatal("等待 ZCode 调试端口超时(" + cfg.Port + ")。");
+                        Fatal(L.T("等待 ZCode 调试端口超时(", "Timed out waiting for the ZCode debug port (") + cfg.Port + L.T(")。", ")"));
                         return;
                     }
                 }
@@ -364,7 +372,7 @@ namespace ZCodeWallpaper
                 string imageDataUrl = LoadImageDataUrl();
                 if (imageDataUrl == null && cfg.ImagePath.Length > 0)
                 {
-                    Notify("图片不存在", "config.txt 里的图片路径无效: " + cfg.ImagePath, 5000);
+                    Notify(L.T("图片不存在", "Image not found"), L.T("config.txt 里的图片路径无效: ", "Invalid image path in config.txt: ") + cfg.ImagePath, 5000);
                 }
                 string payload = BuildPayload(imageDataUrl);
                 currentPayload = payload;
@@ -373,7 +381,7 @@ namespace ZCodeWallpaper
             }
             catch (Exception ex)
             {
-                Fatal("启动失败: " + ex.Message);
+                Fatal(L.T("启动失败: ", "Startup failed: ") + ex.Message);
             }
         }
 
@@ -610,7 +618,7 @@ namespace ZCodeWallpaper
                 string imageDataUrl = LoadImageDataUrl();
                 if (imageDataUrl == null && newImagePath.Length > 0)
                 {
-                    Notify("图片不存在", "config.txt 里的图片路径无效: " + newImagePath, 5000);
+                    Notify(L.T("图片不存在", "Image not found"), L.T("config.txt 里的图片路径无效: ", "Invalid image path in config.txt: ") + newImagePath, 5000);
                 }
                 string payload = BuildPayload(imageDataUrl);
                 currentPayload = payload;
@@ -653,7 +661,7 @@ namespace ZCodeWallpaper
 
         void Fatal(string msg)
         {
-            MessageBox.Show(msg, "ZCode 壁纸", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(msg, L.T("ZCode 壁纸", "ZCode Wallpaper"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             ExitApp();
         }
 
@@ -662,7 +670,7 @@ namespace ZCodeWallpaper
             try
             {
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                string lnkPath = Path.Combine(desktop, "ZCode 壁纸版.lnk");
+                string lnkPath = Path.Combine(desktop, "ZCode Wallpaper.lnk");
                 Type shellType = Type.GetTypeFromProgID("WScript.Shell");
                 object shell = Activator.CreateInstance(shellType);
                 object lnk = shellType.InvokeMember("CreateShortcut",
@@ -675,6 +683,8 @@ namespace ZCodeWallpaper
                 lnkType.InvokeMember("Description", System.Reflection.BindingFlags.SetProperty, null, lnk,
                     new object[] { "带壁纸的 ZCode 启动器" });
                 lnkType.InvokeMember("Save", System.Reflection.BindingFlags.InvokeMethod, null, lnk, new object[0]);
+                string legacyLnk = Path.Combine(desktop, "ZCode 壁纸版.lnk");
+                if (File.Exists(legacyLnk)) { try { File.Delete(legacyLnk); } catch { } }
             }
             catch { }
         }
@@ -692,7 +702,7 @@ namespace ZCodeWallpaper
         public SettingsForm(App app)
         {
             this.app = app;
-            Text = "ZCode 壁纸设置";
+            Text = L.T("ZCode 壁纸设置", "ZCode Wallpaper Settings");
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -704,7 +714,7 @@ namespace ZCodeWallpaper
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             Label l1 = new Label();
-            l1.Text = "图片路径";
+            l1.Text = L.T("图片路径", "Image path");
             l1.Location = new Point(12, 12);
             l1.AutoSize = true;
             Controls.Add(l1);
@@ -717,31 +727,31 @@ namespace ZCodeWallpaper
             Controls.Add(txtPath);
 
             Button btnBrowse = new Button();
-            btnBrowse.Text = "浏览...";
+            btnBrowse.Text = L.T("浏览...", "Browse...");
             btnBrowse.Location = new Point(372, 31);
             btnBrowse.Size = new Size(84, 25);
             btnBrowse.Click += delegate { Browse(); };
             Controls.Add(btnBrowse);
 
-            lblOpacity = MakeLabel("透明度", 72);
+            lblOpacity = MakeLabel(L.T("不透明度", "Opacity"), 72);
             trkOpacity = MakeTrackbar(92, 2, 100, (int)Math.Round(app.cfg.Opacity * 100));
-            lblBlur = MakeLabel("模糊度", 150);
+            lblBlur = MakeLabel(L.T("模糊度", "Blur"), 150);
             trkBlur = MakeTrackbar(170, 0, 40, (int)app.cfg.Blur);
-            lblBrightness = MakeLabel("亮度", 228);
+            lblBrightness = MakeLabel(L.T("亮度", "Brightness"), 228);
             trkBrightness = MakeTrackbar(248, 50, 150, (int)Math.Round(app.cfg.Brightness * 100));
-            lblScale = MakeLabel("缩放", 306);
+            lblScale = MakeLabel(L.T("缩放", "Scale"), 306);
             trkScale = MakeTrackbar(326, 100, 150, (int)Math.Round(app.cfg.Scale * 100));
 
             Label lblFit = new Label();
-            lblFit.Text = "填充:";
+            lblFit.Text = L.T("填充:", "Fit:");
             lblFit.Location = new Point(12, 392);
             lblFit.AutoSize = true;
             Controls.Add(lblFit);
 
             cmbFit = new ComboBox();
             cmbFit.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbFit.Items.Add("cover (铺满)");
-            cmbFit.Items.Add("contain (完整显示)");
+            cmbFit.Items.Add(L.T("cover (铺满)", "cover (fill window)"));
+            cmbFit.Items.Add(L.T("contain (完整显示)", "contain (whole image)"));
             cmbFit.SelectedIndex = app.cfg.Fit == "contain" ? 1 : 0;
             cmbFit.Location = new Point(58, 388);
             cmbFit.Size = new Size(140, 25);
@@ -749,16 +759,16 @@ namespace ZCodeWallpaper
             Controls.Add(cmbFit);
 
             Label lblPos = new Label();
-            lblPos.Text = "位置:";
+            lblPos.Text = L.T("位置:", "Position:");
             lblPos.Location = new Point(212, 392);
             lblPos.AutoSize = true;
             Controls.Add(lblPos);
 
             cmbPos = new ComboBox();
             cmbPos.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbPos.Items.Add("上");
-            cmbPos.Items.Add("中");
-            cmbPos.Items.Add("下");
+            cmbPos.Items.Add(L.T("上", "Top"));
+            cmbPos.Items.Add(L.T("中", "Center"));
+            cmbPos.Items.Add(L.T("下", "Bottom"));
             cmbPos.SelectedIndex = app.cfg.Position == "top" ? 0 : (app.cfg.Position == "bottom" ? 2 : 1);
             cmbPos.Location = new Point(252, 388);
             cmbPos.Size = new Size(56, 25);
@@ -766,14 +776,14 @@ namespace ZCodeWallpaper
             Controls.Add(cmbPos);
 
             Button btnDefault = new Button();
-            btnDefault.Text = "恢复默认";
+            btnDefault.Text = L.T("恢复默认", "Reset");
             btnDefault.Location = new Point(318, 387);
             btnDefault.Size = new Size(72, 27);
             btnDefault.Click += delegate { ResetDefaults(); };
             Controls.Add(btnDefault);
 
             Button btnClose = new Button();
-            btnClose.Text = "关闭";
+            btnClose.Text = L.T("关闭", "Close");
             btnClose.Location = new Point(396, 387);
             btnClose.Size = new Size(60, 27);
             btnClose.Click += delegate { Close(); };
@@ -818,10 +828,10 @@ namespace ZCodeWallpaper
 
         void UpdateLabels()
         {
-            lblOpacity.Text = "透明度: " + trkOpacity.Value + "% (越小越淡)";
-            lblBlur.Text = "模糊度: " + trkBlur.Value + " px";
-            lblBrightness.Text = "亮度: " + trkBrightness.Value + "%";
-            lblScale.Text = "缩放: " + trkScale.Value + "%";
+            lblOpacity.Text = L.T("不透明度: ", "Opacity: ") + trkOpacity.Value + "% " + L.T("(越小壁纸越淡, 界面越清楚)", "(lower = fainter wallpaper, clearer UI)");
+            lblBlur.Text = L.T("模糊度: ", "Blur: ") + trkBlur.Value + " px " + L.T("(只模糊壁纸)", "(wallpaper only)");
+            lblBrightness.Text = L.T("亮度: ", "Brightness: ") + trkBrightness.Value + "%";
+            lblScale.Text = L.T("缩放: ", "Scale: ") + trkScale.Value + "%";
         }
 
         void CommitPath()
@@ -861,8 +871,8 @@ namespace ZCodeWallpaper
         void Browse()
         {
             OpenFileDialog dlg = new OpenFileDialog();
-            dlg.Title = "选择壁纸图片";
-            dlg.Filter = "图片文件|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|所有文件|*.*";
+            dlg.Title = L.T("选择壁纸图片", "Choose a wallpaper image");
+            dlg.Filter = L.T("图片文件", "Image files") + "|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|" + L.T("所有文件", "All files") + "|*.*";
             dlg.CheckFileExists = true;
             if (Directory.Exists(app.cfg.ImagePath))
             {
